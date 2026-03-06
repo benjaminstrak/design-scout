@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:designlobster.substack.com)",
+      "WebFetch(domain:collection.cooperhewitt.org)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:data.rijksmuseum.nl)",
+      "WebFetch(domain:www.loc.gov)",
+      "WebFetch(domain:apidocs.cooperhewitt.org)",
+      "WebFetch(domain:developers.vam.ac.uk)",
+      "WebFetch(domain:archive.org)",
+      "WebFetch(domain:api.vam.ac.uk)",
+      "WebFetch(domain:pro.europeana.eu)",
+      "WebFetch(domain:collection.britishmuseum.org)",
+      "Bash(node src/index.js)",
+      "Bash(git init)",
+      "Bash(git add -A)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
