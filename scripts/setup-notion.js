@@ -16,7 +16,7 @@ const notion = new Client({ auth: NOTION_API_KEY });
 async function setup() {
   console.log('Creating Sources database...');
   const sourcesDb = await notion.databases.create({
-    parent: { page_id: PARENT_PAGE_ID },
+    parent: { type: 'page_id', page_id: PARENT_PAGE_ID },
     title: [{ type: 'text', text: { content: 'Design Scout Sources' } }],
     properties: {
       'Name': { title: {} },
@@ -39,7 +39,7 @@ async function setup() {
 
   console.log('Creating Briefings database...');
   const briefingsDb = await notion.databases.create({
-    parent: { page_id: PARENT_PAGE_ID },
+    parent: { type: 'page_id', page_id: PARENT_PAGE_ID },
     title: [{ type: 'text', text: { content: 'Design Scout Briefings' } }],
     properties: {
       'Title': { title: {} },

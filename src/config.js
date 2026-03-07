@@ -3,7 +3,7 @@
 // Every part of the pipeline imports config from here instead of
 // reading process.env directly. This keeps things in one place.
 
-require('dotenv').config();
+require('dotenv').config({ override: true });
 
 module.exports = {
   gmail: {
