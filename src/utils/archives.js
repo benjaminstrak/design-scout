@@ -181,6 +181,21 @@ async function searchHarvard(query, apiKey, limit = 5) {
   }));
 }
 
+async function searchWikipedia(query, limit = 5) {
+  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query + ' design')}&srlimit=${limit}&format=json&origin=*`;
+  const res = await fetch(url);
+  if (!res.ok) return [];
+  const data = await res.json();
+  return (data.query?.search || []).map((item) => ({
+    source: 'Wikipedia',
+    title: item.title || 'Untitled',
+    description: (item.snippet || '').replace(/<[^>]*>/g, ''),
+    date: '',
+    url: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, '_'))}`,
+    imageUrl: null,
+  }));
+}
+
 async function searchAllArchives(query, config, perSource = 3) {
   console.log(`Searching archives for: "${query}"`);
   const results = await Promise.allSettled([
@@ -193,6 +208,7 @@ async function searchAllArchives(query, config, perSource = 3) {
     searchArtIC(query, perSource),
     searchEuropeana(query, config.museums?.europeanaKey, perSource),
     searchHarvard(query, config.museums?.harvardKey, perSource),
+    searchWikipedia(query, perSource),
   ]);
   const combined = [];
   for (const result of results) {
@@ -208,6 +224,6 @@ module.exports = {
   searchVA, searchRijksmuseum, searchCooperHewitt,
   searchLibraryOfCongress, searchInternetArchive,
   searchMet, searchArtIC,
-  searchEuropeana, searchHarvard,
+  searchEuropeana, searchHarvard, searchWikipedia,
   searchAllArchives,
 };
