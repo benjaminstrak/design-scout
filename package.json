@@ -9,6 +9,7 @@
   "scripts": {
     "test": "jest",
     "start": "node src/index.js",
+    "discover": "node src/discover.js",
     "stage:collect": "node -e \"require('./src/stages/collect')(require('./src/config'))\"",
     "stage:extract": "node -e \"require('./src/stages/extract')(require('./src/config'))\"",
     "stage:analyze": "node -e \"require('./src/stages/analyze')(require('./src/config'))\"",

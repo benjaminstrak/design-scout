@@ -2,7 +2,7 @@
 # Design Scout pipeline runner
 # Runs every 3 days — launchd triggers daily at 8am, this script checks the interval.
 
-LOCK_DIR="/Users/benstrakmacmini/design-scout"
+LOCK_DIR="/Users/benstrakmacmini/Documents/Coding/design-scout"
 LAST_RUN_FILE="$LOCK_DIR/.last-run"
 INTERVAL_DAYS=3
 LOG_FILE="$LOCK_DIR/pipeline.log"
@@ -24,7 +24,7 @@ date +%s > "$LAST_RUN_FILE"
 echo "$(date): Starting Design Scout pipeline" >> "$LOG_FILE"
 
 export PATH="/Users/benstrakmacmini/.local/node/bin:$PATH"
-cd /Users/benstrakmacmini/design-scout
+cd /Users/benstrakmacmini/Documents/Coding/design-scout
 
 /Users/benstrakmacmini/.local/node/bin/node src/index.js >> "$LOG_FILE" 2>&1
 EXIT_CODE=$?
