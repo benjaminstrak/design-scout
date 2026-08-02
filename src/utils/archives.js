@@ -182,18 +182,42 @@ async function searchHarvard(query, apiKey, limit = 5) {
 }
 
 async function searchWikipedia(query, limit = 5) {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query + ' design')}&srlimit=${limit}&format=json&origin=*`;
-  const res = await fetch(url);
+  // `generator=search` instead of `list=search` so we can pull the article
+  // thumbnail and intro text in the same call — a plain search only returns a
+  // snippet and no image, and Wikipedia is too common a source to leave
+  // pictureless when the briefing is meant to show the object.
+  const params = new URLSearchParams({
+    action: 'query',
+    generator: 'search',
+    gsrsearch: `${query} design`,
+    gsrlimit: String(limit),
+    prop: 'pageimages|extracts',
+    piprop: 'thumbnail',
+    pithumbsize: '600',
+    exintro: '1',
+    explaintext: '1',
+    format: 'json',
+    origin: '*',
+  });
+  const res = await fetch(`https://en.wikipedia.org/w/api.php?${params.toString()}`);
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.query?.search || []).map((item) => ({
-    source: 'Wikipedia',
-    title: item.title || 'Untitled',
-    description: (item.snippet || '').replace(/<[^>]*>/g, ''),
-    date: '',
-    url: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, '_'))}`,
-    imageUrl: null,
-  }));
+  const pages = Object.values(data.query?.pages || {});
+  // Generator results come back keyed by page id, not in relevance order;
+  // `index` carries the original search ranking.
+  pages.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+  return pages.map((item) => {
+    const title = item.title || 'Untitled';
+    const description = (item.extract || '').replace(/<[^>]*>/g, '').trim();
+    return {
+      source: 'Wikipedia',
+      title,
+      description: description.length > 600 ? `${description.slice(0, 600)}…` : description,
+      date: '',
+      url: `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`,
+      imageUrl: item.thumbnail?.source || null,
+    };
+  });
 }
 
 async function searchAllArchives(query, config, perSource = 3) {

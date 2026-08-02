@@ -6,6 +6,12 @@ const { loadStageOutput, saveStageOutput } = require('../utils/data');
 const { searchAllArchives } = require('../utils/archives');
 const { buildAnalysisPrompt } = require('../prompts/analyze');
 
+// Opus 5 thinks by default, so the first content block is often a thinking
+// block rather than the answer. Always pick the text block out by type.
+function textOf(response) {
+  return response.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+}
+
 // Load URLs of objects already used in previous briefings, so we can exclude them.
 function loadSeenObjectUrls() {
   const dataDir = path.join(__dirname, '../../data');
@@ -35,8 +41,12 @@ async function analyze(config) {
 
   console.log('Identifying themes for archive search...');
   const themeResponse = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 500,
+    model: 'claude-opus-5',
+    // Generous ceiling: max_tokens caps thinking *and* the answer, and a tight
+    // cap here would spend the whole budget thinking and return empty text.
+    max_tokens: 2000,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'low' },
     messages: [{
       role: 'user',
       content: `Given these newsletter subjects and content snippets, identify 3-5 specific search keywords that would find interesting historical design objects in museum archives. Return ONLY a JSON array of strings, no markdown, no explanation, just the raw JSON array.
@@ -47,7 +57,7 @@ Subjects: ${extracted.data.results
     }],
   });
 
-  const rawThemeText = themeResponse.content[0].text.trim();
+  const rawThemeText = textOf(themeResponse);
   console.log(`Raw theme response: ${rawThemeText}`);
 
   let searchKeywords;
@@ -79,12 +89,14 @@ Subjects: ${extracted.data.results
   console.log('Running main analysis with Claude...');
   const prompt = buildAnalysisPrompt(extracted.data, freshArchiveResults);
   const analysisResponse = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4000,
+    model: 'claude-opus-5',
+    max_tokens: 16000,
+    thinking: { type: 'adaptive' },
+    output_config: { effort: 'high' },
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const analysis = analysisResponse.content[0].text;
+  const analysis = textOf(analysisResponse);
   const output = {
     analysisDate: new Date().toISOString(),
     searchKeywords,
