@@ -2,6 +2,25 @@
 // Uses the Gmail API (not SMTP) to send emails — more reliable with OAuth2.
 const { google } = require('googleapis');
 
+// Escape the few characters that would break out of an HTML attribute. Object
+// titles come from museum APIs and do contain quotes and ampersands.
+function escapeAttr(value) {
+  return String(value || '')
+    .replace(/&/g, '&amp;')
+    .replace(/"/g, '&quot;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+// Museum image, shown above the description. Only https — an http image would
+// trip mixed-content blocking in most mail clients and render as a broken box.
+function objectImage(obj) {
+  if (!obj.imageUrl || !/^https:\/\//i.test(obj.imageUrl)) return '';
+  return `<img src="${escapeAttr(obj.imageUrl)}" alt="${escapeAttr(obj.title)}" `
+    + 'width="520" style="width: 100%; max-width: 520px; height: auto; '
+    + 'border-radius: 3px; display: block; margin-bottom: 16px;"><br>';
+}
+
 function buildEmailHtml(briefing, notionUrl, stats) {
   const ideasHtml = (briefing.ideas || []).map((idea) => `
     <tr><td style="padding: 24px 0; border-bottom: 1px solid #e0e0e0;">
@@ -18,6 +37,7 @@ function buildEmailHtml(briefing, notionUrl, stats) {
     <tr><td style="padding: 24px 0; border-bottom: 1px solid #e0e0e0;">
       <strong style="font-size: 16px; color: #1a2744;">${obj.title}</strong><br>
       <span style="color: #888; font-size: 14px;">${obj.source}, ${obj.date}</span><br><br>
+      ${objectImage(obj)}
       <span style="color: #444;">${obj.description}</span><br><br>
       <span style="color: #666;">Contemporary connection: ${obj.contemporaryConnection}</span><br><br>
       ${obj.url ? `<a href="${obj.url}" style="color: #1a2744; font-weight: bold;">View in collection &rarr;</a>` : ''}

@@ -17,15 +17,30 @@ test('searchWikipedia returns formatted results', async () => {
   global.fetch = jest.fn().mockResolvedValue({
     ok: true,
     json: async () => ({
-      query: { search: [{ title: 'Bauhaus', snippet: 'A German <span>art school</span>' }] },
+      query: {
+        pages: {
+          // Deliberately out of relevance order — `index` is what ranks them.
+          '222': { index: 2, title: 'Bauhaus style', extract: 'A later revival' },
+          '111': {
+            index: 1,
+            title: 'Bauhaus',
+            extract: 'A German art school',
+            thumbnail: { source: 'https://upload.wikimedia.org/bauhaus.jpg' },
+          },
+        },
+      },
     }),
   });
   const results = await searchWikipedia('bauhaus');
-  expect(results).toHaveLength(1);
+  expect(results).toHaveLength(2);
   expect(results[0].source).toBe('Wikipedia');
   expect(results[0].title).toBe('Bauhaus');
   expect(results[0].description).toBe('A German art school');
   expect(results[0].url).toContain('wikipedia.org');
+  expect(results[0].imageUrl).toBe('https://upload.wikimedia.org/bauhaus.jpg');
+  // Ranking is preserved, and a page with no thumbnail is still returned.
+  expect(results[1].title).toBe('Bauhaus style');
+  expect(results[1].imageUrl).toBeNull();
 });
 
 test('searchRijksmuseum returns formatted results', async () => {

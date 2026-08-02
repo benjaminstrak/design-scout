@@ -18,7 +18,10 @@ function buildAnalysisPrompt(extractedData, archiveResults) {
     .join('\n\n===\n\n');
 
   const archiveSummary = archiveResults
-    .map((item) => `[${item.source}] "${item.title}" (${item.date}) — ${item.description}\nURL: ${item.url}`)
+    .map((item) => {
+      const image = item.imageUrl ? `\nIMAGE: ${item.imageUrl}` : '';
+      return `[${item.source}] "${item.title}" (${item.date}) — ${item.description}\nURL: ${item.url}${image}`;
+    })
     .join('\n\n');
 
   return `You are helping write Design Lobster, a biweekly newsletter by Ben Strak that tells "surprising stories from the world of design." It has 7,000+ subscribers who love unexpected angles on design.
@@ -42,10 +45,11 @@ Look across all the newsletters for underlying themes, recurring topics, or cont
 - Include a suggested "draft angle" — one sentence describing how Ben could approach this as a Design Lobster piece
 
 ### 2. OBJECTS (2-3 objects)
-From the archive results below, pick the most interesting objects that connect to themes in the newsletters. For each:
+From the archive results below, pick the most interesting objects that connect to themes in the newsletters. Where two candidates are equally good, prefer the one with an IMAGE — but never pick a duller object just because it has a picture. For each:
 - Explain WHY this object is interesting in a Design Lobster context
 - Connect it to something contemporary
 - Include the source and URL
+- If the archive entry has an IMAGE line, reproduce that image URL exactly — Ben wants to see the object, not just read about it
 
 ### 3. INTERESTING LINKS (3-5 links)
 From the newsletter articles, pick the best/most interesting links. For each:
