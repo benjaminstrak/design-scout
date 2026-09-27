@@ -12,19 +12,24 @@ async function generate(config) {
   console.log('Generating structured briefing...');
   const prompt = buildGenerationPrompt(analyzed.data.analysis);
   const response = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4000,
+    model: 'claude-opus-5-5',
+    // max_tokens includes thinking, so leave plenty of room for the full briefing JSON
+    max_tokens: 16000,
+    // effort = how hard Claude thinks (low | medium | high | xhigh | max)
+    output_config: { effort: 'high' },
     messages: [{ role: 'user', content: prompt }],
   });
 
+  // Opus 5.5 always "thinks" first, so skip the thinking blocks and keep only the text answer
+  const text = response.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+
   let briefing;
   try {
-    const text = response.content[0].text;
     const jsonText = text.replace(/^```json\n?/, '').replace(/\n?```$/, '');
     briefing = JSON.parse(jsonText);
   } catch (err) {
     console.error('Failed to parse Claude response as JSON:', err.message);
-    briefing = { raw: response.content[0].text, parseError: err.message };
+    briefing = { raw: text, parseError: err.message };
   }
 
   const output = {

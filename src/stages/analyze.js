@@ -6,6 +6,12 @@ const { loadStageOutput, saveStageOutput } = require('../utils/data');
 const { searchAllArchives } = require('../utils/archives');
 const { buildAnalysisPrompt } = require('../prompts/analyze');
 
+// Opus 5.5 always "thinks" first, so the reply is a list of blocks (thinking + text).
+// Grab only the text blocks — that's the actual answer.
+function getText(response) {
+  return response.content.filter((b) => b.type === 'text').map((b) => b.text).join('\n').trim();
+}
+
 // Load URLs of objects already used in previous briefings, so we can exclude them.
 function loadSeenObjectUrls() {
   const dataDir = path.join(__dirname, '../../data');
@@ -35,8 +41,11 @@ async function analyze(config) {
 
   console.log('Identifying themes for archive search...');
   const themeResponse = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 500,
+    model: 'claude-opus-5-5',
+    // max_tokens includes thinking, so leave headroom beyond the short answer
+    max_tokens: 4000,
+    // effort = how hard Claude thinks (low | medium | high | xhigh | max). Simple task → medium.
+    output_config: { effort: 'medium' },
     messages: [{
       role: 'user',
       content: `Given these newsletter subjects and content snippets, identify 3-5 specific search keywords that would find interesting historical design objects in museum archives. Return ONLY a JSON array of strings, no markdown, no explanation, just the raw JSON array.
@@ -47,7 +56,7 @@ Subjects: ${extracted.data.results
     }],
   });
 
-  const rawThemeText = themeResponse.content[0].text.trim();
+  const rawThemeText = getText(themeResponse);
   console.log(`Raw theme response: ${rawThemeText}`);
 
   let searchKeywords;
@@ -79,12 +88,14 @@ Subjects: ${extracted.data.results
   console.log('Running main analysis with Claude...');
   const prompt = buildAnalysisPrompt(extracted.data, freshArchiveResults);
   const analysisResponse = await anthropic.messages.create({
-    model: 'claude-sonnet-4-6',
-    max_tokens: 4000,
+    model: 'claude-opus-5-5',
+    max_tokens: 16000,
+    // The core creative step — worth thinking harder. Try 'xhigh' if connections feel shallow.
+    output_config: { effort: 'high' },
     messages: [{ role: 'user', content: prompt }],
   });
 
-  const analysis = analysisResponse.content[0].text;
+  const analysis = getText(analysisResponse);
   const output = {
     analysisDate: new Date().toISOString(),
     searchKeywords,

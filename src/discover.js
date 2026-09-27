@@ -53,8 +53,9 @@ async function discover(config, { dryRun = false } = {}) {
   const anthropic = new Anthropic({ apiKey: config.anthropic.apiKey });
   console.log('Researching new sources via web search (this can take a minute)...');
   const response = await createWithRetry(anthropic, {
-    model: 'claude-sonnet-4-6',
-    max_tokens: 3000,
+    model: 'claude-opus-5-5',
+    // max_tokens includes Opus 5.5's thinking, so leave room on top of the final answer
+    max_tokens: 16000,
     tools: [{ type: 'web_search_20250305', name: 'web_search', max_uses: 6 }],
     messages: [{ role: 'user', content: buildDiscoveryPrompt(existing) }],
   });
