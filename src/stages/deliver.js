@@ -14,8 +14,10 @@ async function deliver(config) {
   console.log(`Notion page created: ${notionUrl}`);
 
   console.log('Sending briefing email...');
+  // Count the newsletters that actually had emails in this run (Stage 2's output)
+  const extracted = loadStageOutput('extract');
   const stats = {
-    newslettersScanned: generated.data.stats?.ideasCount || 0,
+    newslettersScanned: (extracted?.data?.results || []).filter((s) => s.emails?.length > 0).length,
     archivesSearched: 8,
   };
   const emailHtml = buildEmailHtml(briefing, notionUrl, stats);
