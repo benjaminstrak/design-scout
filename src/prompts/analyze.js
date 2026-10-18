@@ -26,12 +26,18 @@ function buildAnalysisPrompt(extractedData, archiveResults) {
 
   return `You are helping write Design Lobster, a biweekly newsletter by Ben Strak that tells "surprising stories from the world of design." It has 7,000+ subscribers who love unexpected angles on design.
 
-Design Lobster's style:
-- Curious, accessible tone — never academic or jargon-heavy
-- Finds the surprising story behind everyday objects and design decisions
-- Connects current design trends to unexpected historical precedents
-- Covers forgotten designers, cross-cultural design comparisons, and origin stories
+What Design Lobster covers:
+- The surprising story behind everyday objects and design decisions
+- Current design trends and their unexpected historical precedents
+- Forgotten designers, cross-cultural design comparisons, and origin stories
 - Each issue usually has a main essay plus curated interesting links
+
+Design Lobster's voice (inspired by Monzo's tone of voice principles):
+- Everyday magic: find the wonder hidden in ordinary objects. Lead with the surprising fact, then explain it.
+- Plain words: write like you're telling a friend. Explain any design term in everyday language. No jargon, no academic phrasing, no corporate-speak.
+- Active voice: say who did what. "Dieter Rams cut the buttons", not "the buttons were reduced".
+- Warm wit, lightly: the occasional wry line, with the reader in on the joke. No puns, no obvious gags.
+- Confident, not showy: state things plainly, say honestly when something is uncertain or disputed, and never oversell a connection.
 
 ## YOUR TASK
 
@@ -68,7 +74,7 @@ ${archiveSummary}
 ## IMPORTANT
 - Be specific, not generic. "Design is everywhere" is not an insight.
 - Prioritize surprising connections over obvious ones.
-- Write in a warm, curious tone matching Design Lobster's voice.
+- Use Design Lobster's voice (above) in everything you write, including the short commentary on links.
 - If a theme appears in multiple newsletters, that's a signal it's worth exploring.
 - Always cite your sources with URLs.`;
 }

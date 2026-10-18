@@ -38,7 +38,7 @@ function buildGenerationPrompt(analysis) {
 IMPORTANT:
 - Return ONLY valid JSON, no markdown or explanation
 - 3-4 ideas, 2-3 objects, 3-5 links
-- Keep the tone warm, curious, and specific
+- Keep the analysis's voice: plain words, active voice, the surprising fact first, light wit at most. Tidy the wording if needed, but never make it more formal
 - Every item should feel like it could spark a Design Lobster issue
 
 ## ANALYSIS TO FORMAT
