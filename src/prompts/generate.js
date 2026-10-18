@@ -3,6 +3,7 @@ function buildGenerationPrompt(analysis) {
   return `You are formatting a Design Lobster newsletter briefing. Take the analysis below and produce a structured JSON output with exactly this format:
 
 {
+  "briefingTitle": "5-9 words naming what THIS briefing is actually about. It becomes the row label in Notion, next to a Date column that already carries the date — so describe the subject, not the format. 'Maps that argue, and the plane table' is useful; 'Briefing' or 'Design roundup, 2 August' is not. No date.",
   "themes": ["tag1", "tag2", ...],
   "ideas": [
     {
@@ -21,7 +22,7 @@ function buildGenerationPrompt(analysis) {
       "description": "Why this object is interesting in a Design Lobster context",
       "contemporaryConnection": "How it connects to something modern",
       "url": "Link to the museum record",
-      "imageUrl": "Image link if available"
+      "imageUrl": "The object's image URL, copied exactly from the analysis. Empty string only if the analysis genuinely has no image for it."
     }
   ],
   "links": [
@@ -37,7 +38,7 @@ function buildGenerationPrompt(analysis) {
 IMPORTANT:
 - Return ONLY valid JSON, no markdown or explanation
 - 3-4 ideas, 2-3 objects, 3-5 links
-- Keep the tone warm, curious, and specific
+- Keep the analysis's voice: plain words, active voice, the surprising fact first, light wit at most. Tidy the wording if needed, but never make it more formal
 - Every item should feel like it could spark a Design Lobster issue
 
 ## ANALYSIS TO FORMAT

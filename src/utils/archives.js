@@ -182,18 +182,42 @@ async function searchHarvard(query, apiKey, limit = 5) {
 }
 
 async function searchWikipedia(query, limit = 5) {
-  const url = `https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(query + ' design')}&srlimit=${limit}&format=json&origin=*`;
-  const res = await fetch(url);
+  // `generator=search` instead of `list=search` so we can pull the article
+  // thumbnail and intro text in the same call — a plain search only returns a
+  // snippet and no image, and Wikipedia is too common a source to leave
+  // pictureless when the briefing is meant to show the object.
+  const params = new URLSearchParams({
+    action: 'query',
+    generator: 'search',
+    gsrsearch: `${query} design`,
+    gsrlimit: String(limit),
+    prop: 'pageimages|extracts',
+    piprop: 'thumbnail',
+    pithumbsize: '600',
+    exintro: '1',
+    explaintext: '1',
+    format: 'json',
+    origin: '*',
+  });
+  const res = await fetch(`https://en.wikipedia.org/w/api.php?${params.toString()}`);
   if (!res.ok) return [];
   const data = await res.json();
-  return (data.query?.search || []).map((item) => ({
-    source: 'Wikipedia',
-    title: item.title || 'Untitled',
-    description: (item.snippet || '').replace(/<[^>]*>/g, ''),
-    date: '',
-    url: `https://en.wikipedia.org/wiki/${encodeURIComponent(item.title.replace(/ /g, '_'))}`,
-    imageUrl: null,
-  }));
+  const pages = Object.values(data.query?.pages || {});
+  // Generator results come back keyed by page id, not in relevance order;
+  // `index` carries the original search ranking.
+  pages.sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+  return pages.map((item) => {
+    const title = item.title || 'Untitled';
+    const description = (item.extract || '').replace(/<[^>]*>/g, '').trim();
+    return {
+      source: 'Wikipedia',
+      title,
+      description: description.length > 600 ? `${description.slice(0, 600)}…` : description,
+      date: '',
+      url: `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, '_'))}`,
+      imageUrl: item.thumbnail?.source || null,
+    };
+  });
 }
 
 async function searchAllArchives(query, config, perSource = 3) {
@@ -216,8 +240,28 @@ async function searchAllArchives(query, config, perSource = 3) {
       combined.push(...result.value);
     }
   }
-  console.log(`Found ${combined.length} archive results`);
+  // Drop pictures we can't load ourselves, so Claude only favours objects whose
+  // image will actually show up in the email.
+  const checks = await Promise.all(combined.map((item) => (item.imageUrl ? imageLoads(item.imageUrl) : true)));
+  let dropped = 0;
+  combined.forEach((item, i) => {
+    if (!checks[i]) { item.imageUrl = null; dropped += 1; }
+  });
+  console.log(`Found ${combined.length} archive results${dropped ? ` (${dropped} unloadable images dropped)` : ''}`);
   return combined;
+}
+
+// Some museum sites refuse automated image requests: the Art Institute of Chicago's
+// Cloudflare bot check does, as of October 2026. Gmail fetches email images the same
+// way, so an image this check can't load would show as a broken box in the briefing.
+async function imageLoads(url) {
+  try {
+    const res = await fetch(url, { headers: { Range: 'bytes=0-1023' }, signal: AbortSignal.timeout(10000) });
+    await res.body?.cancel(); // only the status and type matter, not the image itself
+    return res.ok && (res.headers.get('content-type') || '').startsWith('image/');
+  } catch {
+    return false;
+  }
 }
 
 module.exports = {
@@ -225,5 +269,5 @@ module.exports = {
   searchLibraryOfCongress, searchInternetArchive,
   searchMet, searchArtIC,
   searchEuropeana, searchHarvard, searchWikipedia,
-  searchAllArchives,
+  searchAllArchives, imageLoads,
 };
