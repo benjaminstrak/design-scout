@@ -240,8 +240,28 @@ async function searchAllArchives(query, config, perSource = 3) {
       combined.push(...result.value);
     }
   }
-  console.log(`Found ${combined.length} archive results`);
+  // Drop pictures we can't load ourselves, so Claude only favours objects whose
+  // image will actually show up in the email.
+  const checks = await Promise.all(combined.map((item) => (item.imageUrl ? imageLoads(item.imageUrl) : true)));
+  let dropped = 0;
+  combined.forEach((item, i) => {
+    if (!checks[i]) { item.imageUrl = null; dropped += 1; }
+  });
+  console.log(`Found ${combined.length} archive results${dropped ? ` (${dropped} unloadable images dropped)` : ''}`);
   return combined;
+}
+
+// Some museum sites refuse automated image requests: the Art Institute of Chicago's
+// Cloudflare bot check does, as of October 2026. Gmail fetches email images the same
+// way, so an image this check can't load would show as a broken box in the briefing.
+async function imageLoads(url) {
+  try {
+    const res = await fetch(url, { headers: { Range: 'bytes=0-1023' }, signal: AbortSignal.timeout(10000) });
+    await res.body?.cancel(); // only the status and type matter, not the image itself
+    return res.ok && (res.headers.get('content-type') || '').startsWith('image/');
+  } catch {
+    return false;
+  }
 }
 
 module.exports = {
@@ -249,5 +269,5 @@ module.exports = {
   searchLibraryOfCongress, searchInternetArchive,
   searchMet, searchArtIC,
   searchEuropeana, searchHarvard, searchWikipedia,
-  searchAllArchives,
+  searchAllArchives, imageLoads,
 };

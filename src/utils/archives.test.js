@@ -1,4 +1,4 @@
-const { searchVA, searchRijksmuseum, searchWikipedia } = require('./archives');
+const { searchVA, searchRijksmuseum, searchWikipedia, imageLoads } = require('./archives');
 
 const originalFetch = global.fetch;
 afterEach(() => { global.fetch = originalFetch; });
@@ -59,4 +59,15 @@ test('searchRijksmuseum returns formatted results', async () => {
   expect(results).toHaveLength(1);
   expect(results[0].source).toBe('Rijksmuseum');
   expect(results[0].date).toBe('1642');
+});
+
+test('imageLoads only accepts a successful image response', async () => {
+  const reply = (status, type) => ({ ok: status < 300, headers: { get: () => type }, body: null });
+  global.fetch = jest.fn().mockResolvedValue(reply(206, 'image/jpeg'));
+  expect(await imageLoads('https://upload.wikimedia.org/a.jpg')).toBe(true);
+  // What the Art Institute's bot check sends back instead of the picture
+  global.fetch = jest.fn().mockResolvedValue(reply(403, 'text/html; charset=UTF-8'));
+  expect(await imageLoads('https://www.artic.edu/iiif/2/x/full/600,/0/default.jpg')).toBe(false);
+  global.fetch = jest.fn().mockRejectedValue(new Error('timeout'));
+  expect(await imageLoads('https://example.com/slow.jpg')).toBe(false);
 });
